@@ -1,0 +1,8 @@
+/* styles_header.css */
+.header {
+    background-color: #282c34;
+    color: rgb(165, 136, 136);
+    padding: 15px;
+    text-align: center;
+    font-size: 1.5rem;
+}
