@@ -33,8 +33,8 @@ const TrussVisualizer = ({ nodes = [], elements = [] }) => {
                 {/* Render Elements (Connections) with Different Colors */}
                 {elements.length > 0 &&
                     elements.map((element) => {
-                        const startNode = nodes.find((node) => node.id === parseInt(element.start));
-                        const endNode = nodes.find((node) => node.id === parseInt(element.end));
+                        const startNode = nodes.find((node) => node.id === parseInt(element.start_node || element.start));
+                        const endNode = nodes.find((node) => node.id === parseInt(element.end_node || element.end));
 
                         if (!startNode || !endNode) return null;
 

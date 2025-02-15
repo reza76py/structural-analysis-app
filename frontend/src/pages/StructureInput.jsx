@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios'; // Import axios
 import '../styles/styles_structure_input.css';
 import TrussVisualizer from '../components/TrussVisualizer';
-
 
 const StructureInput = () => {
     const [nodeX, setNodeX] = useState('');
@@ -12,30 +12,81 @@ const StructureInput = () => {
     const [endNode, setEndNode] = useState('');
     const [elements, setElements] = useState([]);
 
-    // Add a Node
-    const handleAddNode = () => {
+    // Fetch nodes and elements when the component loads
+    useEffect(() => {
+        axios.get('http://127.0.0.1:8000/api/nodes/')
+            .then(response => setNodes(response.data))
+            .catch(error => console.error('Error fetching nodes:', error));
+
+        axios.get('http://127.0.0.1:8000/api/elements/')
+            .then(response => setElements(response.data))
+            .catch(error => console.error('Error fetching elements:', error));
+    }, []);
+
+    // Add a Node to the Backend
+    const handleAddNode = async () => {
         if (nodeX !== '' && nodeY !== '' && nodeZ !== '') {
-            setNodes([...nodes, { id: nodes.length + 1, x: nodeX, y: nodeY, z: nodeZ }]);
-            setNodeX('');
-            setNodeY('');
-            setNodeZ('');
+            try {
+                const response = await axios.post('http://127.0.0.1:8000/api/nodes/', {
+                    x: parseFloat(nodeX),
+                    y: parseFloat(nodeY),
+                    z: parseFloat(nodeZ),
+                });
+
+                setNodes([...nodes, response.data]); // Update UI
+                setNodeX('');
+                setNodeY('');
+                setNodeZ('');
+            } catch (error) {
+                console.error("Error adding node:", error);
+                alert("Failed to add node.");
+            }
         }
     };
 
-    // Add a Truss Element (Connection)
-    const handleAddElement = () => {
+    // 🔥 New: Delete Node
+    const handleDeleteNode = async (nodeId) => {
+        try {
+            await axios.delete(`http://127.0.0.1:8000/api/nodes/${nodeId}/`);
+            setNodes(nodes.filter(node => node.id !== nodeId)); // Remove node from UI
+        } catch (error) {
+            console.error("Error deleting node:", error);
+        }
+    };
+
+    // Add a Truss Element to the Backend
+    const handleAddElement = async () => {
         if (startNode !== '' && endNode !== '' && startNode !== endNode) {
-            setElements([...elements, { id: elements.length + 1, start: startNode, end: endNode }]);
-            setStartNode('');
-            setEndNode('');
+            try {
+                const response = await axios.post('http://127.0.0.1:8000/api/elements/', {
+                    start_node: parseInt(startNode),
+                    end_node: parseInt(endNode),
+                });
+
+                setElements([...elements, response.data]); // Update UI
+                setStartNode('');
+                setEndNode('');
+            } catch (error) {
+                console.error("Error adding element:", error);
+                alert("Failed to add element.");
+            }
+        }
+    };
+
+    // 🔥 New: Delete Element
+    const handleDeleteElement = async (elementId) => {
+        try {
+            await axios.delete(`http://127.0.0.1:8000/api/elements/${elementId}/`);
+            setElements(elements.filter(element => element.id !== elementId)); // Remove element from UI
+        } catch (error) {
+            console.error("Error deleting element:", error);
         }
     };
 
     return (
         <div className="structure-container">
-            {/* Flex Container */}
             <div className="flex-container">
-                {/* Inputs Section */}
+                {/* Input Section */}
                 <div className="input-section">
                     <h2>🔧 Define 3D Truss Nodes</h2>
                     <div className="input-group">
@@ -47,8 +98,10 @@ const StructureInput = () => {
 
                     <h3>📌 Nodes List</h3>
                     <ul>
-                        {nodes.map((node) => (
-                            <li key={node.id}>Node {node.id}: (X: {node.x}, Y: {node.y}, Z: {node.z})</li>
+                        {nodes.map((node, index) => (
+                            <li key={node.id}>Node {index + 1}: (X: {node.x}, Y: {node.y}, Z: {node.z})
+                            <button onClick={() => handleDeleteNode(node.id)}>❌ Delete</button>
+                            </li>
                         ))}
                     </ul>
 
@@ -56,18 +109,18 @@ const StructureInput = () => {
                     <div className="input-group">
                         <select value={startNode} onChange={(e) => setStartNode(e.target.value)}>
                             <option value="">Select Start Node</option>
-                            {nodes.map((node) => (
+                            {nodes.map((node, index) => (
                                 <option key={node.id} value={node.id}>
-                                    Node {node.id}
+                                    Node {index + 1}
                                 </option>
                             ))}
                         </select>
 
                         <select value={endNode} onChange={(e) => setEndNode(e.target.value)}>
                             <option value="">Select End Node</option>
-                            {nodes.map((node) => (
+                            {nodes.map((node, index) => (
                                 <option key={node.id} value={node.id}>
-                                    Node {node.id}
+                                    Node {index + 1}
                                 </option>
                             ))}
                         </select>
@@ -77,15 +130,31 @@ const StructureInput = () => {
 
                     <h3>📌 Truss Elements</h3>
                     <ul>
-                        {elements.map((element) => (
+                        {elements.map((element, index) => {
+                            const startNodeIndex = nodes.findIndex(node => node.id === element.start_node);
+                            const endNodeIndex = nodes.findIndex(node => node.id === element.end_node);
+
+
                             <li key={element.id}>
-                                Element {element.id}: Node {element.start} ➝ Node {element.end}
+                                Element {element.id}: Node {element.start_node} ➝ Node {element.end_node}
+                                <button onClick={() => handleDeleteElement(element.id)}>❌ Delete</button>
                             </li>
-                        ))}
+
+
+                            return (
+                                <li key={element.id}>
+                                    {/* Show consecutive numbering instead of database IDs */}
+                                    Element {index + 1}: 
+                                    Node {startNodeIndex !== -1 ? startNodeIndex + 1 : "?"} ➝ 
+                                    Node {endNodeIndex !== -1 ? endNodeIndex + 1 : "?"}
+                                    <button onClick={() => handleDeleteElement(element.id)}>❌ Delete</button>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
 
-                {/* 3D Visualization Section */}
+                {/* Visualization Section */}
                 <div className="visualization-section">
                     <h2>🌐 3D Truss Visualization</h2>
                     <TrussVisualizer nodes={nodes} elements={elements} />
@@ -96,135 +165,3 @@ const StructureInput = () => {
 };
 
 export default StructureInput;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import '../styles/styles_structure_input.css';
-// import TrussVisualizer from '../components/TrussVisualizer';
-// import { fetchNodes, addNode, fetchElements, addElement } from '../api';
-
-// const StructureInput = () => {
-//     const [nodeX, setNodeX] = useState('');
-//     const [nodeY, setNodeY] = useState('');
-//     const [nodeZ, setNodeZ] = useState('');
-//     const [nodes, setNodes] = useState([]);
-//     const [startNode, setStartNode] = useState('');
-//     const [endNode, setEndNode] = useState('');
-//     const [elements, setElements] = useState([]);
-
-//     // Load nodes & elements from Django when the component mounts
-//     useEffect(() => {
-//         fetchNodes().then(setNodes);
-//         fetchElements().then(setElements);
-//     }, []);
-
-//     // Add a Node
-//     const handleAddNode = async () => {
-//         if (nodeX !== '' && nodeY !== '' && nodeZ !== '') {
-//             try {
-//                 const newNode = await addNode({
-//                     x: parseFloat(nodeX),
-//                     y: parseFloat(nodeY),
-//                     z: parseFloat(nodeZ),
-//                 });
-    
-//                 console.log("New node added:", newNode);  // ✅ Debugging log
-//                 setNodes([...nodes, newNode]);  // ✅ Add new node to state
-//                 setNodeX('');
-//                 setNodeY('');
-//                 setNodeZ('');
-//             } catch (error) {
-//                 console.error("Error adding node:", error);  // ✅ Log error
-//                 alert("Failed to add node. Check console for details.");
-//             }
-//         }
-//     };
-    
-
-//     // Add a Truss Element (Connection)
-//     const handleAddElement = async () => {
-//         if (startNode !== '' && endNode !== '' && startNode !== endNode) {
-//             const newElement = await addElement({ start_node: parseInt(startNode), end_node: parseInt(endNode) });
-//             setElements([...elements, newElement]);  // Update state with the new element
-//             setStartNode('');
-//             setEndNode('');
-//         }
-//     };
-
-//     return (
-//         <div className="structure-container">
-//             {/* Flex Container */}
-//             <div className="flex-container">
-//                 {/* Inputs Section */}
-//                 <div className="input-section">
-//                     <h2>🔧 Define 3D Truss Nodes</h2>
-//                     <div className="input-group">
-//                         <input type="number" placeholder="X" value={nodeX} onChange={(e) => setNodeX(e.target.value)} />
-//                         <input type="number" placeholder="Y" value={nodeY} onChange={(e) => setNodeY(e.target.value)} />
-//                         <input type="number" placeholder="Z" value={nodeZ} onChange={(e) => setNodeZ(e.target.value)} />
-//                         <button onClick={handleAddNode}>➕ Add Node</button>
-//                     </div>
-
-//                     <h3>📌 Nodes List</h3>
-//                     <ul>
-//                         {nodes.map((node) => (
-//                             <li key={node.id}>Node {node.id}: (X: {node.x}, Y: {node.y}, Z: {node.z})</li>
-//                         ))}
-//                     </ul>
-
-//                     <h2>🔗 Define Truss Elements</h2>
-//                     <div className="input-group">
-//                         <select value={startNode} onChange={(e) => setStartNode(e.target.value)}>
-//                             <option value="">Select Start Node</option>
-//                             {nodes.map((node) => (
-//                                 <option key={node.id} value={node.id}>
-//                                     Node {node.id}
-//                                 </option>
-//                             ))}
-//                         </select>
-
-//                         <select value={endNode} onChange={(e) => setEndNode(e.target.value)}>
-//                             <option value="">Select End Node</option>
-//                             {nodes.map((node) => (
-//                                 <option key={node.id} value={node.id}>
-//                                     Node {node.id}
-//                                 </option>
-//                             ))}
-//                         </select>
-
-//                         <button onClick={handleAddElement}>➕ Add Element</button>
-//                     </div>
-
-//                     <h3>📌 Truss Elements</h3>
-//                     <ul>
-//                         {elements.map((element) => (
-//                             <li key={element.id}>
-//                                 Element {element.id}: Node {element.start_node} ➝ Node {element.end_node}
-//                             </li>
-//                         ))}
-//                     </ul>
-//                 </div>
-
-//                 {/* 3D Visualization Section */}
-//                 <div className="visualization-section">
-//                     <h2>🌐 3D Truss Visualization</h2>
-//                     <TrussVisualizer nodes={nodes} elements={elements} />
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default StructureInput;
