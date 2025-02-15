@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import Node, Element
+from .models import Node, Element, Project
 from .serializers import NodeSerializer, ElementSerializer  # ✅ Ensure both serializers are imported
 
 # ✅ Node API
@@ -46,3 +46,30 @@ class ElementListCreateAPIView(APIView):
         element = get_object_or_404(Element, pk=pk)
         element.delete()
         return Response({"message": "Element deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    
+
+# ✅ API to Save a Project
+class SaveProjectAPIView(APIView):
+    def post(self, request):
+        project_name = request.data.get("name")
+        if not project_name:
+            return Response({"error": "Project name is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        project, created = Project.objects.get_or_create(name=project_name)
+
+        # Assign all nodes and elements to this project
+        Node.objects.update(project=project)
+        Element.objects.update(project=project)
+
+        return Response({"message": f"Project '{project_name}' saved successfully"}, status=status.HTTP_200_OK)
+
+# ✅ API to Clear Database if No Project is Saved
+class ClearDatabaseAPIView(APIView):
+    def delete(self, request):
+        # Check if any project exists
+        if not Project.objects.exists():
+            Node.objects.all().delete()
+            Element.objects.all().delete()
+            return Response({"message": "Database cleared"}, status=status.HTTP_200_OK)
+
+        return Response({"message": "Projects exist, database not cleared"}, status=status.HTTP_400_BAD_REQUEST)

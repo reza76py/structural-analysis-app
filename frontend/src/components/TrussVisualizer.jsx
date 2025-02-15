@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Line } from '@react-three/drei'; // Import Line from drei
+import { OrbitControls, Line, Text } from '@react-three/drei'; // Import Text for labels
 
 // Function to generate random colors for each element
 const getRandomColor = () => {
@@ -30,9 +30,9 @@ const TrussVisualizer = ({ nodes = [], elements = [] }) => {
                         </mesh>
                     ))}
 
-                {/* Render Elements (Connections) with Different Colors */}
+                {/* Render Elements (Connections) with Labels */}
                 {elements.length > 0 &&
-                    elements.map((element) => {
+                    elements.map((element, index) => {
                         const startNode = nodes.find((node) => node.id === parseInt(element.start_node || element.start));
                         const endNode = nodes.find((node) => node.id === parseInt(element.end_node || element.end));
 
@@ -41,13 +41,23 @@ const TrussVisualizer = ({ nodes = [], elements = [] }) => {
                         const start = [parseFloat(startNode.x), parseFloat(startNode.y), parseFloat(startNode.z)];
                         const end = [parseFloat(endNode.x), parseFloat(endNode.y), parseFloat(endNode.z)];
 
+                        // Compute midpoint for label placement
+                        const midPoint = [
+                            (start[0] + end[0]) / 2,
+                            (start[1] + end[1]) / 2 + 0.2, // Slightly above the element
+                            (start[2] + end[2]) / 2,
+                        ];
+
                         return (
-                            <Line
-                                key={element.id}
-                                points={[start, end]} // Start and end points
-                                color={getRandomColor()} // Assign a different color for each element
-                                lineWidth={2} // Line thickness
-                            />
+                            <group key={element.id}>
+                                {/* Render Truss Line */}
+                                <Line points={[start, end]} color={getRandomColor()} lineWidth={2} />
+                                
+                                {/* Render Element Number */}
+                                <Text position={midPoint} fontSize={0.3} color="black">
+                                    {`E${index + 1}`} {/* Show Element Number */}
+                                </Text>
+                            </group>
                         );
                     })}
             </Canvas>
@@ -56,3 +66,5 @@ const TrussVisualizer = ({ nodes = [], elements = [] }) => {
 };
 
 export default TrussVisualizer;
+
+
