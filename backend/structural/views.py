@@ -4,6 +4,7 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Node, Element, Project
 from .serializers import NodeSerializer, ElementSerializer  # ✅ Ensure both serializers are imported
+from .calculators.lengths import calculate_member_lengths  # ✅ Import the function to calculate member lengths
 
 # ✅ Node API
 class NodeListCreateAPIView(APIView):
@@ -73,3 +74,9 @@ class ClearDatabaseAPIView(APIView):
             return Response({"message": "Database cleared"}, status=status.HTTP_200_OK)
 
         return Response({"message": "Projects exist, database not cleared"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class MemberLengthAPIView(APIView):
+    def get(self, request):
+        member_lengths = calculate_member_lengths()
+        return Response({"member_lengths": member_lengths}, status=status.HTTP_200_OK)

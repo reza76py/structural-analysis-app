@@ -18,7 +18,7 @@ const TrussVisualizer = ({ nodes = [], elements = [] }) => {
         <div className="truss-visualizer">
             <Canvas camera={{ position: [5, 5, 10] }}>
                 <ambientLight intensity={0.5} />
-                <pointLight position={[10, 10, 10]} />
+                <pointLight position={[10, 10, 30]} />
                 <OrbitControls />
 
                 {/* Render Nodes */}
