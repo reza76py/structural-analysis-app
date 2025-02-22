@@ -8,13 +8,13 @@ from .calculators.lengths import calculate_member_lengths  # ✅ Import the func
 
 # ✅ Node API
 class NodeListCreateAPIView(APIView):
-    def get(self, request):
+    def get(self, request): 
         nodes = Node.objects.all()
         serializer = NodeSerializer(nodes, many=True)
         return Response(serializer.data)
 
-    def post(self, request):
-        serializer = NodeSerializer(data=request.data)
+    def post(self, request):    # // 🔴 // 🟡 //  🟢 //
+        serializer = NodeSerializer(data=request.data)  # // 🔴 // 🟡 //  🟢 //
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -35,8 +35,8 @@ class ElementListCreateAPIView(APIView):
         serializer = ElementSerializer(elements, many=True)
         return Response(serializer.data)
 
-    def post(self, request):
-        serializer = ElementSerializer(data=request.data)
+    def post(self, request):    #// 🟣 // 🟤 //
+        serializer = ElementSerializer(data=request.data)   #// 🟣 // 🟤 //
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
