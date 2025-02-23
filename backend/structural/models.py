@@ -24,20 +24,11 @@ class Project(models.Model):
         return self.name
     
 
-class Node(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
-    x = models.FloatField()
-    y = models.FloatField()
-    z = models.FloatField()
+class Support(models.Model):
+    node = models.OneToOneField(Node, on_delete=models.CASCADE, primary_key=True)
+    restrict_x = models.BooleanField(default=False)
+    restrict_y = models.BooleanField(default=False)
+    restrict_z = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Node {self.id}: ({self.x}, {self.y}, {self.z})"
-    
-class Element(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)  # Linked to Project
-    start_node = models.ForeignKey(Node, related_name="start_elements", on_delete=models.CASCADE)
-    end_node = models.ForeignKey(Node, related_name="end_elements", on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"Element {self.id}: {self.start_node} ➝ {self.end_node}"   
-    
+        return f"Support for Node {self.node.id}: Rx={self.restrict_x}, Ry={self.restrict_y}, Rz={self.restrict_z}"

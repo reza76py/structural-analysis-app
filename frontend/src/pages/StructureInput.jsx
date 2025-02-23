@@ -47,6 +47,16 @@ const StructureInput = () => {
                     y: parseFloat(nodeY),   // 🟡 //
                     z: parseFloat(nodeZ),   // 🟢 //
                 });
+
+                if (response.status === 201) { // ✅ Only update if request is successful
+                    setNodes([...nodes, response.data]); 
+                    setNodeX('');
+                    setNodeY('');
+                    setNodeZ('');
+                } else {
+                    console.error("Unexpected response:", response);
+                    alert("Failed to add node.");
+                }
                 setNodes([...nodes, response.data]); // 🔵 //
                 setNodeX('');   // 🔴 //
                 setNodeY('');   // 🟡 //
@@ -60,13 +70,13 @@ const StructureInput = () => {
 
     const handleDeleteNode = async (nodeId) => {
         try {
-            await axios.delete(`http://127.0.0.1:8000/api/nodes/${nodeId}/`);   // 🔵 //
-            setNodes(nodes.filter(node => node.id !== nodeId)); // 🔵 //
-            setNodeConstraints((prev) => {
-                const newConstraints = { ...prev };
-                delete newConstraints[nodeId];
-                return newConstraints;
-            });
+            const response = await axios.delete(`http://127.0.0.1:8000/api/nodes/${nodeId}/`);
+            if (response.status === 204) { // ✅ Ensure deletion was successful
+                setNodes(nodes.filter(node => node.id !== nodeId));
+            } else {
+                console.error("Failed to delete node:", response);
+                alert("Could not delete node.");
+            }
         } catch (error) {
             console.error("Error deleting node:", error);
         }
@@ -117,19 +127,55 @@ const StructureInput = () => {
     
 
     const handleToggleConstraint = (nodeId, constraint) => {
-        setNodeConstraints((prev) => ({
-            ...prev,
-            [nodeId]: {
-                ...prev[nodeId],
-                [constraint]: !prev[nodeId]?.[constraint], // Toggle value
-            },
-        }));
+        setSupports((prevSupports) => {
+            const updatedSupports = {
+                ...prevSupports,
+                [nodeId]: {
+                    ...prevSupports[nodeId], 
+                    [constraint]: prevSupports[nodeId]?.[constraint] === 1 ? 0 : 1 // ✅ Toggle between 0 and 1
+                }
+            };
+    
+            return updatedSupports;
+        });
     };
+    
+    
+    
+    const handleApplyConstraints = async () => {
+        console.log("🚀 Applying Constraints to MySQL:", supports);
+    
+        try {
+            // ✅ First, DELETE all existing supports from MySQL
+            await axios.delete('http://127.0.0.1:8000/api/supports/');
+    
+            // ✅ Then, send the new constraints for each node
+            const requests = Object.entries(supports).map(([nodeId, constraints]) =>
+                axios.post('http://127.0.0.1:8000/api/supports/', {
+                    node: parseInt(nodeId),
+                    restrict_x: constraints.restrict_x || 0,
+                    restrict_y: constraints.restrict_y || 0,
+                    restrict_z: constraints.restrict_z || 0,
+                })
+            );
+    
+            await Promise.all(requests); // ✅ Send all at once
+    
+            console.log("✅ All constraints applied successfully!");
+        } catch (error) {
+            console.error("❌ Error applying constraints:", error);
+        }
+    };
+    
+    
+
+
+    
 
     const getNdofLabel = (nodeId) => {
         const constraints = nodeConstraints[nodeId] || {};
         const numConstraints = Object.values(constraints).filter(Boolean).length;
-        return 6 - numConstraints * 2; // Each constraint reduces NDOF by 2
+        return 3 - numConstraints; // Each constraint reduces NDOF by 2
     };
 
     return (
@@ -151,37 +197,43 @@ const StructureInput = () => {
                                 Node {node.id}: (X: {node.x}, Y: {node.y}, Z: {node.z}) 
                                 <button onClick={() => handleDeleteNode(node.id)}>❌ Delete</button>
 
-                                {supports[node.id] && <span> 🏗 {supports[node.id]}</span>} {/*// 🟣 //*/}
+                                {supports[node.id] && <span> 🏗 (supports[node.id])</span>}
+ {/*// 🟣 //*/}
 
                                 {/* Checkboxes for Constraints */}
                                 <div>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={nodeConstraints[node.id]?.Rx || false}
-                                            onChange={() => handleToggleConstraint(node.id, "Rx")}
-                                        /> Rx (Restrict X)
-                                    </label>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={nodeConstraints[node.id]?.Ry || false}
-                                            onChange={() => handleToggleConstraint(node.id, "Ry")}
-                                        /> Ry (Restrict Y)
-                                    </label>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={nodeConstraints[node.id]?.Rz || false}
-                                            onChange={() => handleToggleConstraint(node.id, "Rz")}
-                                        /> Rz (Restrict Z)
-                                    </label>
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={supports[node.id]?.restrict_x === 1} // ✅ Ensure correct state
+                                        onChange={() => handleToggleConstraint(node.id, "restrict_x")}
+                                    /> Rx (Restrict X)
+                                </label>
+
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={supports[node.id]?.restrict_y === 1} // ✅ Ensure correct state
+                                        onChange={() => handleToggleConstraint(node.id, "restrict_y")}
+                                    /> Ry (Restrict Y)
+                                </label>
+
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={supports[node.id]?.restrict_z === 1} // ✅ Ensure correct state
+                                        onChange={() => handleToggleConstraint(node.id, "restrict_z")}
+                                    /> Rz (Restrict Z)
+                                </label>
+
                                 </div>
 
                                 <span> 🔧 NDOF: {getNdofLabel(node.id)}</span>
                             </li>
                         ))}
                     </ul>
+
+                    <button onClick={handleApplyConstraints}>Apply</button>
 
 
 

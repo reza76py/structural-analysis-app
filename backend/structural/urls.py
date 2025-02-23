@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import NodeListCreateAPIView, ElementListCreateAPIView, SaveProjectAPIView, ClearDatabaseAPIView, MemberLengthAPIView
+from .views import NodeListCreateAPIView, ElementListCreateAPIView, SaveProjectAPIView, ClearDatabaseAPIView, MemberLengthAPIView, SupportAPIView
 
 urlpatterns = [
     path('nodes/', NodeListCreateAPIView.as_view(), name='nodes-list'), #// 🔴 // 🟡 //  🟢 //
@@ -9,4 +9,6 @@ urlpatterns = [
     path('save_project/', SaveProjectAPIView.as_view(), name='save_project'),
     path('clear_database/', ClearDatabaseAPIView.as_view(), name='clear_database'),
     path('member_lengths/', MemberLengthAPIView.as_view(), name='member_lengths'),
+    path('supports/', SupportAPIView.as_view(), name='supports-list'),
+
 ]

@@ -2,52 +2,52 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import Node, Element, Project
-from .serializers import NodeSerializer, ElementSerializer  # ✅ Ensure both serializers are imported
+from .models import Node, Element, Project, Support
+from .serializers import NodeSerializer, ElementSerializer, SupportSerializer
 from .calculators.lengths import calculate_member_lengths  # ✅ Import the function to calculate member lengths
 
-# ✅ Node API
 class NodeListCreateAPIView(APIView):
     def get(self, request): 
         nodes = Node.objects.all()
         serializer = NodeSerializer(nodes, many=True)
         return Response(serializer.data)
 
-    def post(self, request):    # // 🔴 // 🟡 //  🟢 //
-        serializer = NodeSerializer(data=request.data)  # // 🔴 // 🟡 //  🟢 //
+    def post(self, request):
+        serializer = NodeSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            node = serializer.save()  # ✅ Save the node first
+
+            # ✅ Ensure a corresponding support entry is created for this node
+            Support.objects.get_or_create(
+                node=node,
+                defaults={"restrict_x": False, "restrict_y": False, "restrict_z": False}
+            )
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    # 🔥 New: Delete node function
-    def delete(self, request, pk):
-        node = get_object_or_404(Node, pk = pk)
-        node.delete()
-        return Response({"message": "Node deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-        
 
 
-# ✅ Element API (Make sure it exists)
+
+# ✅ Element API - No changes required
 class ElementListCreateAPIView(APIView):
     def get(self, request):
         elements = Element.objects.all()
         serializer = ElementSerializer(elements, many=True)
         return Response(serializer.data)
 
-    def post(self, request):    #// 🟣 // 🟤 //
-        serializer = ElementSerializer(data=request.data)   #// 🟣 // 🟤 //
+    def post(self, request):  #// 🟣 // 🟤 //
+        serializer = ElementSerializer(data=request.data)  #// 🟣 // 🟤 //
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     # 🔥 New: Delete element function
     def delete(self, request, pk):
         element = get_object_or_404(Element, pk=pk)
         element.delete()
         return Response({"message": "Element deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-    
+
 
 # ✅ API to Save a Project
 class SaveProjectAPIView(APIView):
@@ -64,6 +64,7 @@ class SaveProjectAPIView(APIView):
 
         return Response({"message": f"Project '{project_name}' saved successfully"}, status=status.HTTP_200_OK)
 
+
 # ✅ API to Clear Database if No Project is Saved
 class ClearDatabaseAPIView(APIView):
     def delete(self, request):
@@ -76,7 +77,32 @@ class ClearDatabaseAPIView(APIView):
         return Response({"message": "Projects exist, database not cleared"}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# ✅ API to Fetch Member Lengths
 class MemberLengthAPIView(APIView):
     def get(self, request):
         member_lengths = calculate_member_lengths()
         return Response({"member_lengths": member_lengths}, status=status.HTTP_200_OK)
+
+
+# ✅ Support API - Ensure all nodes have corresponding support entries
+class SupportAPIView(APIView):
+    def get(self, request):
+        supports = Support.objects.all()
+        serializer = SupportSerializer(supports, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        node_id = request.data.get("node")
+        restrict_x = request.data.get("restrict_x", False)
+        restrict_y = request.data.get("restrict_y", False)
+        restrict_z = request.data.get("restrict_z", False)
+
+        node = get_object_or_404(Node, id=node_id)
+
+        # ✅ Ensure support entry for this node is updated or created
+        support, created = Support.objects.update_or_create(
+            node=node,
+            defaults={"restrict_x": restrict_x, "restrict_y": restrict_y, "restrict_z": restrict_z},
+        )
+
+        return Response(SupportSerializer(support).data, status=status.HTTP_200_OK)
