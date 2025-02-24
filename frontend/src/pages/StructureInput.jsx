@@ -402,6 +402,7 @@ const StructureInput = () => {
                     return acc;
                 }, {});
                 setSupports(supportsData);
+                console.log("✅ Supports stored in React state:", supportsData);  // 🔥 Debug Log
             } catch (error) {
                 console.error('Error fetching supports:', error);
             }

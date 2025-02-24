@@ -106,3 +106,10 @@ class SupportAPIView(APIView):
         )
 
         return Response(SupportSerializer(support).data, status=status.HTTP_200_OK)
+    
+    def delete(self, request):
+        """
+        Delete all supports (only if you really want this feature).
+        """
+        Support.objects.all().delete()
+        return Response({"message": "All supports deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
