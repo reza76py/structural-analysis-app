@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from .models import Node, Element, Project, Support
 from .serializers import NodeSerializer, ElementSerializer, SupportSerializer
 from .calculators.lengths import calculate_member_lengths  # ✅ Import the function to calculate member lengths
+from django.db import connection
 
 class NodeListCreateAPIView(APIView):
     def get(self, request): 
@@ -27,6 +28,33 @@ class NodeListCreateAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class NodeDetailView(APIView):
+    def get(self, request, pk):
+        """Retrieve a single node"""
+        try:
+            node = Node.objects.get(pk=pk)
+            serializer = NodeSerializer(node)
+            return Response(serializer.data)
+        except Node.DoesNotExist:
+            return Response({"error": "Node not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, pk):
+        """Delete a single node and properly reset auto-increment"""
+        try:
+            node = Node.objects.get(pk=pk)
+            node.delete()
+
+            # ✅ Find the maximum existing ID and reset AUTO_INCREMENT to max+1
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT MAX(id) FROM structural_node;")
+                max_id = cursor.fetchone()[0] or 0  # If no nodes remain, reset to 1
+                cursor.execute(f"ALTER TABLE structural_node AUTO_INCREMENT = {max_id + 1};")
+
+            return Response({"message": "Node deleted successfully, auto-increment adjusted"}, status=status.HTTP_204_NO_CONTENT)
+        except Node.DoesNotExist:
+            return Response({"error": "Node not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
 
 # ✅ Element API - No changes required
 class ElementListCreateAPIView(APIView):
@@ -47,6 +75,10 @@ class ElementListCreateAPIView(APIView):
         element = get_object_or_404(Element, pk=pk)
         element.delete()
         return Response({"message": "Element deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+
 
 
 # ✅ API to Save a Project
