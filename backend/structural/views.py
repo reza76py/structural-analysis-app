@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from .models import Node, Element, Project, Support
 from .serializers import NodeSerializer, ElementSerializer, SupportSerializer
 from .calculators.lengths import calculate_member_lengths  # ✅ Import the function to calculate member lengths
+from .calculators.direction_cosines import calculate_direction_cosines  # ✅ Import the function to calculate direction cosines
 from django.db import connection
 
 class NodeListCreateAPIView(APIView):
@@ -145,3 +146,11 @@ class SupportAPIView(APIView):
         """
         Support.objects.all().delete()
         return Response({"message": "All supports deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
+
+
+class DirectionCosinesAPIView(APIView):
+    def get(self, request):
+        direction_cosines = calculate_direction_cosines()
+        return Response({"direction_cosines": direction_cosines}, status=status.HTTP_200_OK)

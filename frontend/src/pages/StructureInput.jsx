@@ -13,6 +13,7 @@ const StructureInput = () => {
     const [endNode, setEndNode] = useState('');
     const [elements, setElements] = useState([]);
     const [memberLengths, setMemberLengths] = useState([]);
+    const [directionCosines, setDirectionCosines] = useState([]);
 
     useEffect(() => {
         axios.get('http://127.0.0.1:8000/api/nodes/')
@@ -22,6 +23,10 @@ const StructureInput = () => {
         axios.get('http://127.0.0.1:8000/api/elements/')
             .then(response => setElements(response.data))
             .catch(error => console.error('Error fetching elements:', error));
+
+        axios.get('http://127.0.0.1:8000/api/direction_cosines/')
+            .then(response => setDirectionCosines(response.data.direction_cosines))
+            .catch(error => console.error('Error fetching direction cosines:', error));    
 
         const fetchSupports = async () => {
             try {
