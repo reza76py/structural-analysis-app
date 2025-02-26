@@ -14,6 +14,10 @@ const StructureInput = () => {
     const [elements, setElements] = useState([]);
     const [memberLengths, setMemberLengths] = useState([]);
     const [directionCosines, setDirectionCosines] = useState([]);
+    const [stiffnessMatrices, setStiffnessMatrices] = useState([]);
+    const [globalStiffnessMatrices, setGlobalStiffnessMatrices] = useState([]);
+    const [structureStiffnessMatrix, setStructureStiffnessMatrix] = useState([]);
+
 
     useEffect(() => {
         axios.get('http://127.0.0.1:8000/api/nodes/')
@@ -26,7 +30,42 @@ const StructureInput = () => {
 
         axios.get('http://127.0.0.1:8000/api/direction_cosines/')
             .then(response => setDirectionCosines(response.data.direction_cosines))
-            .catch(error => console.error('Error fetching direction cosines:', error));    
+            .catch(error => console.error('Error fetching direction cosines:', error));
+            
+            
+        axios.get('http://127.0.0.1:8000/api/local_stiffness_matrices/')
+            .then(response => setStiffnessMatrices(response.data.stiffness_matrices))
+            .catch(error => console.error('Error fetching local stiffness matrices:', error)); 
+            
+            
+        axios.get('http://127.0.0.1:8000/api/global_stiffness_matrices/')
+            .then(response => setGlobalStiffnessMatrices(response.data.stiffness_matrices))
+            .catch(error => console.error('Error fetching global stiffness matrices:', error));
+            
+            const fetchStructureMatrix = async () => {
+                try {
+                    const response = await axios.get('http://127.0.0.1:8000/api/structure_stiffness_matrix/');
+                    console.log("Full API Response:", response);
+        
+                    if (response.data && Array.isArray(response.data.structure_stiffness_matrix)) {
+                        console.log("✅ Setting State: Structure Stiffness Matrix Found!");
+                        setStructureStiffnessMatrix(response.data.structure_stiffness_matrix);
+                    } else {
+                        console.error("❌ Unexpected response structure:", response.data);
+                        setStructureStiffnessMatrix([]);  // Ensure it's an empty array on failure
+                    }
+                } catch (error) {
+                    console.error("❌ Error Fetching Structure Stiffness Matrix:", error);
+                    setStructureStiffnessMatrix([]);
+                }
+            };
+        
+            fetchStructureMatrix();
+        
+        
+        
+            
+
 
         const fetchSupports = async () => {
             try {
@@ -154,6 +193,30 @@ const StructureInput = () => {
         return 3 - numConstraints; // Each constraint reduces NDOF by 1
     };
 
+
+    const renderMatrix = (matrix) => {
+        if (!matrix || matrix.length === 0) return <div>Empty matrix received</div>;
+        
+        return (
+            <div>
+                <div className="matrix-info">
+                    Dimensions: {matrix.length}x{matrix[0]?.length || 0}
+                </div>
+                <div className="matrix-container">
+                    {matrix.map((row, rowIndex) => (
+                        <div key={rowIndex} className="matrix-row">
+                            {row.map((value, colIndex) => (
+                                <span key={colIndex} className="matrix-cell">
+                                    {typeof value === 'number' ? value.toFixed(2) : 'NaN'}
+                                </span>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="structure-container">
             <div className="flex-container">
@@ -244,6 +307,77 @@ const StructureInput = () => {
                             );
                         })}
                     </ul>
+
+                    <h3>📏 Direction Cosines</h3>
+                    <ul>
+                        {directionCosines.map((cosine) => (
+                            <li key={cosine.element_id}>
+                                Element {cosine.element_id}: 
+                                (cosθx: {cosine.cos_theta_x.toFixed(4)}, 
+                                cosθy: {cosine.cos_theta_y.toFixed(4)}, 
+                                cosθz: {cosine.cos_theta_z.toFixed(4)})
+                            </li>
+                        ))}
+                    </ul>
+
+                    <h3>🛠️ Local Stiffness Matrices</h3>
+                    <ul>
+                        {stiffnessMatrices.map((stiffness) => (
+                            <li key={stiffness.element_id}>
+                                Element {stiffness.element_id}:
+                                <pre>
+                                    k_local = [
+                                        [{stiffness.k_local[0][0].toFixed(2)}, {stiffness.k_local[0][1].toFixed(2)}],
+                                        [{stiffness.k_local[1][0].toFixed(2)}, {stiffness.k_local[1][1].toFixed(2)}]
+                                    ]
+                                </pre>
+                            </li>
+                        ))}
+                    </ul>
+
+
+                    <h3>🌍 Global Stiffness Matrices</h3>
+                    <ul>
+                        {globalStiffnessMatrices.map((stiffness) => (
+                            <li key={stiffness.element_id}>
+                                Element {stiffness.element_id}:
+                                <pre>
+                                    k_global = [
+                                        [{stiffness.k_global[0][0].toFixed(2)}, {stiffness.k_global[0][1].toFixed(2)}, ...],
+                                        [{stiffness.k_global[1][0].toFixed(2)}, {stiffness.k_global[1][1].toFixed(2)}, ...],
+                                        ...
+                                    ]
+                                </pre>
+                            </li>
+                        ))}
+                    </ul>
+
+                    
+                            
+
+                    <h3>🛠️ Structure Stiffness Matrix</h3>
+                    <ul>{structureStiffnessMatrix}</ul>
+
+
+                    <div className="structure-container">
+                    <div className="flex-container">
+                        <div className="input-section">
+                            {/* ... (keep all existing JSX) */}
+
+                            <h3>🛠️ Structure Stiffness Matrix</h3>
+                            {structureStiffnessMatrix.length > 0 ? (
+                                renderMatrix(structureStiffnessMatrix)
+                            ) : (
+                                <div>Loading structure stiffness matrix...</div>
+                            )}
+                        </div>
+
+                        {/* ... (keep visualization section) */}
+                    </div>
+                </div>
+        
+
+
                 </div>
 
                 <div className="visualization-section">

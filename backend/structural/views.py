@@ -6,6 +6,9 @@ from .models import Node, Element, Project, Support
 from .serializers import NodeSerializer, ElementSerializer, SupportSerializer
 from .calculators.lengths import calculate_member_lengths  # ✅ Import the function to calculate member lengths
 from .calculators.direction_cosines import calculate_direction_cosines  # ✅ Import the function to calculate direction cosines
+from .calculators.stiffness_matrix import calculate_local_stiffness_matrices
+from .calculators.stiffness_matrix_global import calculate_global_stiffness_matrices
+from .calculators.stiffness_matrix_assembly import assemble_global_stiffness_matrix
 from django.db import connection
 
 class NodeListCreateAPIView(APIView):
@@ -154,3 +157,25 @@ class DirectionCosinesAPIView(APIView):
     def get(self, request):
         direction_cosines = calculate_direction_cosines()
         return Response({"direction_cosines": direction_cosines}, status=status.HTTP_200_OK)
+    
+
+
+class LocalStiffnessMatrixAPIView(APIView):
+    def get(self, request):
+        stiffness_matrices = calculate_local_stiffness_matrices()
+        return Response({"stiffness_matrices": stiffness_matrices}, status=status.HTTP_200_OK)
+    
+
+
+
+class GlobalStiffnessMatrixAPIView(APIView):
+    def get(self, request):
+        stiffness_matrices = calculate_global_stiffness_matrices()
+        return Response({"stiffness_matrices": stiffness_matrices}, status=status.HTTP_200_OK)
+    
+
+
+class StructureStiffnessMatrixAPIView(APIView):
+    def get(self, request):
+        stiffness_matrix = assemble_global_stiffness_matrix()
+        return Response({"structure_stiffness_matrix": stiffness_matrix})    
