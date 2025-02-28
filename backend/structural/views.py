@@ -9,6 +9,7 @@ from .calculators.direction_cosines import calculate_direction_cosines  # ✅ Im
 from .calculators.stiffness_matrix import calculate_local_stiffness_matrices
 from .calculators.stiffness_matrix_global import calculate_global_stiffness_matrices
 from .calculators.stiffness_matrix_assembly import assemble_global_stiffness_matrix
+from .calculators.stiffness_matrix_reza import stiffness_matrix_reza
 from django.db import connection
 
 class NodeListCreateAPIView(APIView):
@@ -178,4 +179,14 @@ class GlobalStiffnessMatrixAPIView(APIView):
 class StructureStiffnessMatrixAPIView(APIView):
     def get(self, request):
         stiffness_matrix = assemble_global_stiffness_matrix()
-        return Response({"structure_stiffness_matrix": stiffness_matrix})    
+        return Response({"structure_stiffness_matrix": stiffness_matrix})
+
+
+class StiffnessMatrixRezaAPIView(APIView):
+    def get(self, request):
+        stiffness_matrix = stiffness_matrix_reza()
+        
+        if not isinstance(stiffness_matrix, list):  # Ensure it's a list
+            stiffness_matrix = [stiffness_matrix]
+        
+        return Response({"stiffness_matrix": stiffness_matrix})

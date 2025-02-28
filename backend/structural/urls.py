@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import NodeListCreateAPIView, ElementListCreateAPIView, SaveProjectAPIView, ClearDatabaseAPIView, MemberLengthAPIView, SupportAPIView, NodeDetailView, DirectionCosinesAPIView, LocalStiffnessMatrixAPIView, GlobalStiffnessMatrixAPIView, StructureStiffnessMatrixAPIView
+from .views import NodeListCreateAPIView, ElementListCreateAPIView, SaveProjectAPIView, ClearDatabaseAPIView, MemberLengthAPIView, SupportAPIView, NodeDetailView, DirectionCosinesAPIView, LocalStiffnessMatrixAPIView, GlobalStiffnessMatrixAPIView, StructureStiffnessMatrixAPIView, StiffnessMatrixRezaAPIView
 
 urlpatterns = [
     path('nodes/', NodeListCreateAPIView.as_view(), name='nodes-list'),  # ✅ Handles GET and POST
@@ -14,4 +14,5 @@ urlpatterns = [
     path('local_stiffness_matrices/', LocalStiffnessMatrixAPIView.as_view(), name='local_stiffness_matrices'),
     path('global_stiffness_matrices/', GlobalStiffnessMatrixAPIView.as_view(), name='global_stiffness_matrices'),
     path('structure_stiffness_matrix/', StructureStiffnessMatrixAPIView.as_view(), name='structure-stiffness-matrix'),
+    path('stiffness_matrix_reza/', StiffnessMatrixRezaAPIView.as_view(), name='stiffness-matrix-reza'),
 ]

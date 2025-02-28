@@ -17,6 +17,7 @@ const StructureInput = () => {
     const [stiffnessMatrices, setStiffnessMatrices] = useState([]);
     const [globalStiffnessMatrices, setGlobalStiffnessMatrices] = useState([]);
     const [structureStiffnessMatrix, setStructureStiffnessMatrix] = useState([]);
+    const[steffnessMatrixReza, setSteffnessMatrixReza] = useState("");
 
 
     useEffect(() => {
@@ -61,6 +62,11 @@ const StructureInput = () => {
             };
         
             fetchStructureMatrix();
+
+
+        axios.get('http://127.0.0.1:8000/api/stiffness_matrix_reza/')
+            .then(response => setSteffnessMatrixReza(response.data.stiffness_matrix))
+            .catch(error => console.error('Error fetching local stiffness matrices:', error));    
         
         
         
@@ -221,6 +227,23 @@ const StructureInput = () => {
         <div className="structure-container">
             <div className="flex-container">
                 <div className="input-section">
+
+
+                <div>
+                    <h2>This is Reza</h2>
+                    {steffnessMatrixReza.length > 0 ? (
+                        <ul>
+                            {steffnessMatrixReza.map((item, index) => (
+                                <li key={index}>
+                                <strong>Element {item.element_id}: </strong>
+                                {item.stiffness}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>Loading...</p>
+                    )}
+                </div>
                     <h2>🔧 Define 3D Truss Nodes</h2>
                     <div className="input-group">
                         <input type="number" placeholder="X" value={nodeX} onChange={(e) => setNodeX(e.target.value)} />
@@ -375,6 +398,9 @@ const StructureInput = () => {
                         {/* ... (keep visualization section) */}
                     </div>
                 </div>
+
+
+
         
 
 
